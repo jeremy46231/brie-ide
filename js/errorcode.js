@@ -22,9 +22,6 @@ function exp(k) {
 }
 
 function log(k) {
-  if (k < 1 || k > 255) {
-    throw Error('Bad log(' + k + ')')
-  }
   return LOG_TABLE[k]
 }
 

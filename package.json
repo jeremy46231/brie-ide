@@ -1,6 +1,6 @@
 {
-  "dependencies": {},
   "devDependencies": {
+    "fflate": "^0.8.2",
     "@types/bun": "^1.1.16",
     "esbuild": "^0.24.2",
     "google-closure-compiler": "^20240317.0.0",

@@ -29,7 +29,7 @@ function fillFinders(matrix) {
   }
 }
 
-// Put align and timinig
+// Put align and timing
 function fillAlignAndTiming(matrix) {
   let N = matrix.length
   if (N > 21) {
@@ -41,10 +41,8 @@ function fillAlignAndTiming(matrix) {
       res.unshift(p)
     }
     res.unshift(6)
-    for (let i = 0; i < res.length; i++) {
-      for (let j = 0; j < res.length; j++) {
-        let x = res[i],
-          y = res[j]
+    for (let x of res) {
+      for (let y of res) {
         if (matrix[x][y]) continue
         for (let r = -2; r <= 2; r++) {
           for (let c = -2; c <= 2; c++) {
@@ -76,11 +74,11 @@ function fillStub(matrix) {
   matrix[8][8] = 0x80
   matrix[N - 8][8] = 0x81
 
-  if (N < 45) return
-
-  for (let i = N - 11; i < N - 8; i++) {
-    for (let j = 0; j < 6; j++) {
-      matrix[i][j] = matrix[j][i] = 0x80
+  if (N >= 45) {
+    for (let i = N - 11; i < N - 8; i++) {
+      for (let j = 0; j < 6; j++) {
+        matrix[i][j] = matrix[j][i] = 0x80
+      }
     }
   }
 }
@@ -148,40 +146,22 @@ const fillReserved = (function () {
 // Fill data
 const fillData = (function () {
   let MASK_FUNCTIONS = [
-    function (i, j) {
-      return (i + j) % 2 == 0
-    },
-    function (i, j) {
-      return i % 2 == 0
-    },
-    function (i, j) {
-      return j % 3 == 0
-    },
-    function (i, j) {
-      return (i + j) % 3 == 0
-    },
-    function (i, j) {
-      return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 == 0
-    },
-    function (i, j) {
-      return ((i * j) % 2) + ((i * j) % 3) == 0
-    },
-    function (i, j) {
-      return (((i * j) % 2) + ((i * j) % 3)) % 2 == 0
-    },
-    function (i, j) {
-      return (((i * j) % 3) + ((i + j) % 2)) % 2 == 0
-    },
+    (i, j) => (i + j) % 2 == 0,
+    (i, j) => i % 2 == 0,
+    (i, j) => j % 3 == 0,
+    (i, j) => (i + j) % 3 == 0,
+    (i, j) => (Math.floor(i / 2) + Math.floor(j / 3)) % 2 == 0,
+    (i, j) => ((i * j) % 2) + ((i * j) % 3) == 0,
+    (i, j) => (((i * j) % 2) + ((i * j) % 3)) % 2 == 0,
+    (i, j) => (((i * j) % 3) + ((i + j) % 2)) % 2 == 0,
   ]
 
-  return function fillData(
-    matrix,
-    data,
-    mask
-  ) {
+  return function fillData(matrix, data, mask) {
     let N = matrix.length
-    let row, col, dir = -1
-    row = col = N - 1
+    let row = N - 1,
+      col = N - 1,
+      dir = -1
+
     let mask_fn = MASK_FUNCTIONS[mask]
     let len = data.b[data.b.length - 1].length
 
@@ -206,7 +186,7 @@ const fillData = (function () {
     }
 
     function put(byte) {
-      for (let mask = 0x80; mask; mask = mask >> 1) {
+      for (let mask = 0x80; mask; mask >>= 1) {
         let pixel = !!(mask & byte)
         if (mask_fn(row, col)) pixel = !pixel
         matrix[row][col] = pixel ? 1 : 0
@@ -227,12 +207,8 @@ const fillData = (function () {
         } else {
           col--
         }
-        if (col == 6) {
-          col--
-        }
-        if (col < 0) {
-          return false
-        }
+        if (col == 6) col--
+        if (col < 0) return false
       } while (matrix[row][col] & 0xf0)
       return true
     }
@@ -299,9 +275,5 @@ function getMatrix(data) {
   fillData(matrix, data, bestMask)
   fillReserved(matrix, bestMask)
 
-  return matrix.map(function (row) {
-    return row.map(function (cell) {
-      return cell & 1
-    })
-  })
+  return matrix.map((row) => row.map((cell) => cell & 1))
 }
