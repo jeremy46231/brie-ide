@@ -1,10 +1,11 @@
 import { $ } from 'bun'
 import fs from 'fs/promises'
 import { qrcodegen } from './lib/qrcodegen'
+const { QrCode, QrSegment } = qrcodegen
 import { deflateSync } from 'fflate'
 
-await $`rm -r dist/`
-await $`bunx google-closure-compiler js/* -O ADVANCED --js_output_file dist/bundle.js`
+await $`rm -r dist/ || true`
+await $`bunx google-closure-compiler src/*.js -O ADVANCED --js_output_file dist/bundle.js`
 await $`bunx terser dist/bundle.js -o dist/bundle.js --compress`
 
 const file = await fs.readFile('dist/bundle.js')
@@ -14,15 +15,37 @@ const compressed = deflateSync(new Uint8Array(file), {
   level: 9,
   mem: 12,
 })
+await fs.writeFile(
+  'dist/temp.bundle.js.gz.bytes',
+  [...compressed].map((x) => x.toString(2).padStart(8, '0')).join('\n')
+)
+
 console.log(`Compressed size: ${compressed.length} bytes`)
 
-const digits = bitsToDigits(uint8arrayToBits(compressed))
+const bitChunkSize = 33
+const digitChunkSize = digitsToStoreBits(bitChunkSize)
+
+const digits = bitsToDigits(uint8arrayToBits(compressed), bitChunkSize)
 await fs.writeFile('dist/bundle.js.digits', digits)
 
-const qr = qrcodegen.QrCode.encodeSegments(
-  [qrcodegen.QrSegment.makeNumeric(digits)],
-  qrcodegen.QrCode.Ecc.LOW
-)
+const prefixFile = await fs.readFile('src/prefix.html')
+const prefix = prefixFile
+  .toString()
+  .replaceAll('BIT_CHUNK_SIZE', bitChunkSize.toString())
+  .replaceAll('DIGIT_CHUNK_SIZE', digitChunkSize.toString())
+  .replaceAll('TOTAL_BYTES', compressed.length.toString())
+const dataURL = `${prefix}${digits}`
+await fs.writeFile('dist/bundle.js.dataurl', dataURL)
+
+const prefixSegment = QrSegment.makeSegments(prefix)
+const digitsSegment = QrSegment.makeNumeric(digits)
+const segments = [...prefixSegment, digitsSegment]
+
+const qr = QrCode.encodeSegments(segments, QrCode.Ecc.LOW)
+const qrBits = QrSegment.getTotalBits(segments, qr.version)
+const maxBits = 23648
+console.log(`QR bits: ${qrBits} / ${maxBits} (${Math.round((qrBits / maxBits) * 1000) / 10}%, ${Math.floor((maxBits - qrBits) / 8)} bytes left)`)
+
 // logQR(qr)
 await fs.writeFile('dist/bundle.js.qr.svg', qrSVG(qr))
 
@@ -46,13 +69,17 @@ function uint8arrayToBits(compressed: Uint8Array): (0 | 1)[] {
   return bits
 }
 
+function digitsToStoreBits(bitChunkSize: number) {
+  return Math.ceil(Math.log10(Math.pow(2, bitChunkSize)))
+}
+
 function bitsToDigits(bits: (0 | 1)[], bitChunkSize = 33) {
   let digits = ''
-  const digitChunkSize = Math.ceil(Math.log10(Math.pow(2, bitChunkSize)))
+  const digitChunkSize = digitsToStoreBits(bitChunkSize)
 
   const chunks = chunkArray(bits, bitChunkSize)
   for (const chunk of chunks) {
-    let value = parseInt(chunk.join(''), 2)
+    let value = parseInt(chunk.join('').padEnd(bitChunkSize, '0'), 2)
     const string = value.toFixed(0).padStart(digitChunkSize, '0')
     digits += string
   }

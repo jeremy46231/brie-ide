@@ -63,7 +63,7 @@ const templates = versions.map(function (
 // Get version template
 function getTemplate([data10, data1]) {
   for (const version of templates) {
-    if ((version.v < 10 ? data1 : data10).length >= version.dl) {
+    if ((version.v < 10 ? data1 : data10).length / 8 <= version.dl) {
       return structuredClone(version)
     }
   }
@@ -71,10 +71,7 @@ function getTemplate([data10, data1]) {
 }
 
 // Fill template
-function fillTemplate(
-  [data10, data1],
-  versionTemplate
-) {
+function fillTemplate([data10, data1], versionTemplate) {
   const dataBlocks = new Array(versionTemplate.dl).fill(0)
   const data = data1 || data10
 
@@ -83,7 +80,8 @@ function fillTemplate(
       data
         .slice(i, i + 8)
         .map((bit) => (bit ? '1' : '0'))
-        .join(''),
+        .join('')
+        .padEnd(8, '0'),
       2
     )
   }
@@ -109,6 +107,9 @@ function fillTemplate(
 }
 
 // All-in-one
+/**
+ * @param {string} text
+ */
 function QR(text) {
   const message = encode(text)
   const template = getTemplate(message)

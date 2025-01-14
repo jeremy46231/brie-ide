@@ -196,7 +196,7 @@ const fillData = (function () {
 
     function next() {
       do {
-        if (col % 2 ^ +(col < 6)) {
+        if (col % 2 ^ (col < 6)) {
           if ((dir < 0 && row == 0) || (dir > 0 && row == N - 1)) {
             col--
             dir = -dir

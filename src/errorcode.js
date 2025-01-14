@@ -1,12 +1,9 @@
 // Galois Field Math
-/** @const {number} */
 const GF256_BASE = 285
 
-/** @const {!Array<number>} */
 const EXP_TABLE = [1]
 
-/** @const {!Array<number>} */
-const LOG_TABLE: number[] = []
+const LOG_TABLE = []
 
 for (let i = 1; i < 256; i++) {
   let n = EXP_TABLE[i - 1] << 1
@@ -18,41 +15,25 @@ for (let i = 0; i < 255; i++) {
   LOG_TABLE[EXP_TABLE[i]] = i
 }
 
-/**
- * @param {number} k
- * @return {number}
- */
-function exp(k: number): number {
+function exp(k) {
   while (k < 0) k += 255
   while (k > 255) k -= 255
   return EXP_TABLE[k]
 }
 
-/**
- * @param {number} k
- * @return {number}
- */
-function log(k: number): number {
-  if (k < 1 || k > 255) {
-    throw Error('Bad log(' + k + ')')
-  }
+function log(k) {
   return LOG_TABLE[k]
 }
 
 // Generator Polynomials
-/** @const {!Array<!Array<number>>} */
 let POLYNOMIALS = [[0]]
 
-/**
- * @param {number} num
- * @return {!Array<number>}
- */
-function generatorPolynomial(num: number): number[] {
+function generatorPolynomial(num) {
   if (POLYNOMIALS[num]) {
     return POLYNOMIALS[num]
   }
   let prev = generatorPolynomial(num - 1)
-  let res: number[] = []
+  let res = []
 
   res[0] = prev[0]
   for (let i = 1; i <= num; i++) {
@@ -63,15 +44,7 @@ function generatorPolynomial(num: number): number[] {
 }
 
 // export functions
-/**
- * @param {!Array<number>} msg
- * @param {number} ec_len
- * @return {!Array<number>}
- */
-export function calculateEC(
-  msg: number[],
-  ec_len: number
-): number[] {
+function calculateEC(msg, ec_len) {
   // `msg` could be array or buffer
   // convert `msg` to array
   msg = [].slice.call(msg)
@@ -91,5 +64,5 @@ export function calculateEC(
     }
     msg.shift()
   }
-  return msg;
+  return msg
 }
