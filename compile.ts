@@ -15,10 +15,6 @@ const compressed = deflateSync(new Uint8Array(file), {
   level: 9,
   mem: 12,
 })
-await fs.writeFile(
-  'dist/temp.bundle.js.gz.bytes',
-  [...compressed].map((x) => x.toString(2).padStart(8, '0')).join('\n')
-)
 
 console.log(`Compressed size: ${compressed.length} bytes`)
 
@@ -26,7 +22,7 @@ const bitChunkSize = 33
 const digitChunkSize = digitsToStoreBits(bitChunkSize)
 
 const digits = bitsToDigits(uint8arrayToBits(compressed), bitChunkSize)
-await fs.writeFile('dist/bundle.js.digits', digits)
+// await fs.writeFile('dist/bundle.js.digits.txt', digits)
 
 const prefixFile = await fs.readFile('src/prefix.html')
 const prefix = prefixFile
@@ -35,7 +31,7 @@ const prefix = prefixFile
   .replaceAll('DIGIT_CHUNK_SIZE', digitChunkSize.toString())
   .replaceAll('TOTAL_BYTES', compressed.length.toString())
 const dataURL = `${prefix}${digits}`
-await fs.writeFile('dist/bundle.js.dataurl', dataURL)
+await fs.writeFile('dist/url.txt', dataURL)
 
 const prefixSegment = QrSegment.makeSegments(prefix)
 const digitsSegment = QrSegment.makeNumeric(digits)
@@ -44,10 +40,14 @@ const segments = [...prefixSegment, digitsSegment]
 const qr = QrCode.encodeSegments(segments, QrCode.Ecc.LOW)
 const qrBits = QrSegment.getTotalBits(segments, qr.version)
 const maxBits = 23648
-console.log(`QR bits: ${qrBits} / ${maxBits} (${Math.round((qrBits / maxBits) * 1000) / 10}%, ${Math.floor((maxBits - qrBits) / 8)} bytes left)`)
+console.log(
+  `QR bits: ${qrBits} / ${maxBits} (${
+    Math.round((qrBits / maxBits) * 1000) / 10
+  }%, ${Math.floor((maxBits - qrBits) / 8)} bytes left)`
+)
 
 // logQR(qr)
-await fs.writeFile('dist/bundle.js.qr.svg', qrSVG(qr))
+await fs.writeFile('dist/qrqr.svg', qrSVG(qr))
 
 // functions
 
@@ -102,11 +102,11 @@ function qrSVG(qr: qrcodegen.QrCode) {
   } ${qr.size * size}">`
   for (let y = 0; y < qr.size; y++) {
     for (let x = 0; x < qr.size; x++) {
-      if (qr.getModule(x, y)) {
-        svg += `<rect x="${x * size}" y="${
-          y * size
-        }" width="${size}" height="${size}" fill="black"/>`
-      }
+      svg += `<rect x="${x * size}" y="${
+        y * size
+      }" width="${size}" height="${size}" fill="${
+        qr.getModule(x, y) ? 'black' : 'white'
+      }"/>`
     }
   }
   return svg + '</svg>'

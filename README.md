@@ -1,4 +1,4 @@
-# BrieIDE
+# QRQR
 
 Made for [Hack Club](https://hackclub.com)'s [Say Cheese](https://saycheese.hackclub.com) YSWS.
 
