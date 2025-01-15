@@ -2,7 +2,7 @@
 
 A QR code that can generate QR codes <img src="https://cachet.dunkirk.sh/emojis/ultrafastparrot/r" width="16">
 
-<a href="dist/url.txt">
+<a href="dist/qr.svg">
   <img src="dist/qr.svg" alt="QRQR" width="400">
 </a>
 
@@ -12,11 +12,13 @@ data:text/html,<script>d=new DecompressionStream('deflate-raw');w=d.writable.get
 ```
 <!-- end-url -->
 
-Made for [Hack Club](https://hackclub.com)'s [Say Cheese](https://saycheese.hackclub.com) YSWS (in like 15 hours <img src="https://cachet.dunkirk.sh/emojis/pf/r" width="16">).
+Made for [Hack Club](https://hackclub.com)'s [Say Cheese](https://saycheese.hackclub.com) YSWS :D
+
+Note: The iPhone camera app is not capable of opening `data:` URLs from QR codes. As a workaround, you can create a new shortcut in the Shortcuts app with a "Scan QR" action, then copy the URL to your browser. Your mileage may vary with other QR scanners, they might return the URL as text or fail to understand the URL at all <img src="https://cachet.dunkirk.sh/emojis/heavysob/r" width="16"> (the QR code is completely standars-compliant though)
 
 ## How it works
 
-The source code is in `src/`. The JavaScript files are compiled with Google's incredible [Closure Compiler](https://github.com/google/closure-compiler), then ran through [Terser](https://terser.org) for good measure. The resulting bundle is then compressed with raw [Deflate](https://en.wikipedia.org/wiki/Deflate), converted to a string of decimal numbers, and appended to the end of [prefix.html](src/prefix.html) to create the final [Data URL](https://en.wikipedia.org/wiki/Data_URI_scheme). The QR code uses [byte mode](https://www.thonky.com/qr-code-tutorial/byte-mode-encoding) and [numeric mode](https://www.thonky.com/qr-code-tutorial/numeric-mode-encoding), letting much more data fit in the QR code.
+The source code is in `src/`. The JavaScript files are compiled with Google's incredible [Closure Compiler](https://github.com/google/closure-compiler), then ran through [Terser](https://terser.org) for good measure. The resulting bundle is then compressed with raw [Deflate](https://en.wikipedia.org/wiki/Deflate), converted to a string of decimal numbers, and appended to the end of [prefix.html](src/prefix.html) to create the final [`data:` URL](https://en.wikipedia.org/wiki/Data_URI_scheme). The QR code uses [byte mode](https://www.thonky.com/qr-code-tutorial/byte-mode-encoding) and [numeric mode](https://www.thonky.com/qr-code-tutorial/numeric-mode-encoding), letting much more data fit in the QR code.
 
 The prefix, golfed by hand, has a script tag which decodes, decompresses, and executes the bundle from the URL. The JS then writes a UI to the page, accepting text and generating QR codes, which are rendered to many `<div>`s in a [CSS Grid](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout). If no URL is inputted, it defaults to the current page's location, making the page a sort of [quine](https://en.wikipedia.org/wiki/Quine_(computing)), generating a QR code of itself.
 
@@ -25,6 +27,11 @@ The prefix, golfed by hand, has a script tag which decodes, decompresses, and ex
 To compile the QR code, install the dependencies and run the `compile.ts` script:
 
 ```sh
+# imagemagick is optional, used for converting the SVG to PNG
+winget install ImageMagick # windows
+brew install imagemagick # mac
+sudo apt install imagemagick # debian/ubuntu
+
 bun i
 bun compile.ts
 ```

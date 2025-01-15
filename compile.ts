@@ -52,18 +52,13 @@ const qr = QrCode.encodeSegments(segments, QrCode.Ecc.LOW)
 
 // logQR(qr)
 await fs.writeFile('dist/qr.svg', qrSVG(qr))
+try {
+  await $`magick dist/qr.svg dist/qr.png`
+} catch (e) {
+  console.error('ImageMagick not installed, skipping PNG generation')
+}
 
 await fs.rm('dist/bundle.js')
-
-/*
-<!-- start-url -->
-```
-
-```
-<!-- end-url -->
-
-put the data url in this codeblock in README.md
-*/
 
 const readmeContent = (await fs.readFile('README.md')).toString()
 const replacedReadme = readmeContent.replace(
@@ -125,7 +120,7 @@ function logQR(qr: qrcodegen.QrCode) {
   }
 }
 function qrSVG(qr: qrcodegen.QrCode) {
-  const size = 1
+  const size = 10
   const padding = size * 4
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${
     qr.size * size + padding * 2
