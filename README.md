@@ -3,7 +3,7 @@
 A QR code that can generate QR codes <img src="https://cachet.dunkirk.sh/emojis/ultrafastparrot/r" width="16">
 
 <a href="dist/qr.svg">
-  <img src="dist/qr.svg" alt="QRQR" width="400">
+  <img src="dist/qr.svg" alt="QRQR" width="500">
 </a>
 
 <!-- start-url -->
