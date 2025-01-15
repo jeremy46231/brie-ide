@@ -1,20 +1,22 @@
-const div = document.querySelector('div')
-const input = document.querySelector('input')
+let doc = document
+doc.write`<meta name=viewport content=initial-scale=1><input style=width:100%><div style="display:grid;margin:1em;max-width:calc(100vh - 70px)">`
+doc.title = 'QRQR'
+
+let div = doc.querySelector`div`
+let input = doc.querySelector`input`
 input.oninput = update
 setTimeout(update, 10)
 
 function update() {
-  const value = input.value
-  if (!value) return (div.innerHTML = '<a href=https:qrqr.jer.app>source')
-  const qr = QR(value)
+  let value = input.value || doc.baseURI
+  let qr = QR(value)
   div.style.gridTemplateColumns = `repeat(${qr.length}, 1fr)`
   div.innerHTML = qr
     .flat()
     .map(
-      (cell) =>
-        `<div style=aspect-ratio:1;background:${cell && '#000'}></div>`
+      (cell) => `<div style=aspect-ratio:1;background:${cell && '#000'}></div>`
     ).join``
-  // const string = qr
+  // let string = qr
   //   .map((row) => row.map((cell) => (cell ? '██' : '  ')).join(''))
   //   .join('\n')
   // document.querySelector('pre').textContent = string

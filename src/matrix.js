@@ -84,7 +84,7 @@ function fillStub(matrix) {
 }
 
 // Fill reserved areas
-const fillReserved = (function () {
+let fillReserved = (function () {
   let FORMATS = Array(32)
   let VERSIONS = Array(40)
 
@@ -96,7 +96,7 @@ const fillReserved = (function () {
     let res = format << 10
     for (let i = 5; i > 0; i--) {
       if (res >>> (9 + i)) {
-        res = res ^ (gf15 << (i - 1))
+        res ^= (gf15 << (i - 1))
       }
     }
     FORMATS[format] = (res | (format << 10)) ^ formats_mask
@@ -106,7 +106,7 @@ const fillReserved = (function () {
     let res = version << 12
     for (let i = 6; i > 0; i--) {
       if (res >>> (11 + i)) {
-        res = res ^ (gf18 << (i - 1))
+        res ^= (gf18 << (i - 1))
       }
     }
     VERSIONS[version] = res | (version << 12)
@@ -144,7 +144,7 @@ const fillReserved = (function () {
 })()
 
 // Fill data
-const fillData = (function () {
+let fillData = (function () {
   let MASK_FUNCTIONS = [
     (i, j) => (i + j) % 2 == 0,
     (i, j) => i % 2 == 0,
@@ -217,11 +217,11 @@ const fillData = (function () {
 
 // Calculate penalty
 function calculatePenalty(matrix) {
-  const N = matrix.length
+  let N = matrix.length
   let penalty = 0
 
   // Rule 1: Check rows and columns for consecutive bits
-  const checkRun = (line) => {
+  let checkRun = (line) => {
     let len = 1
     for (let i = 1; i < N; i++) {
       len = (line[i] & 1) === (line[i - 1] & 1) ? len + 1 : 1
@@ -236,7 +236,7 @@ function calculatePenalty(matrix) {
   // Rule 2: Check 2x2 blocks
   for (let i = 0; i < N - 1; i++) {
     for (let j = 0; j < N - 1; j++) {
-      const s =
+      let s =
         (matrix[i][j] +
           matrix[i][j + 1] +
           matrix[i + 1][j] +
@@ -247,7 +247,7 @@ function calculatePenalty(matrix) {
   }
 
   // Rule 4: Balance dark bits
-  const numDark = matrix.flat().filter((bit) => bit & 1).length
+  let numDark = matrix.flat().filter((bit) => bit & 1).length
   penalty += 10 * Math.floor(Math.abs(10 - (20 * numDark) / (N * N)))
 
   return penalty

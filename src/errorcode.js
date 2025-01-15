@@ -1,13 +1,13 @@
 // Galois Field Math
-const GF256_BASE = 285
+let GF256_BASE = 285
 
-const EXP_TABLE = [1]
+let EXP_TABLE = [1]
 
-const LOG_TABLE = []
+let LOG_TABLE = []
 
 for (let i = 1; i < 256; i++) {
   let n = EXP_TABLE[i - 1] << 1
-  if (n > 255) n = n ^ GF256_BASE
+  if (n > 255) n ^= GF256_BASE
   EXP_TABLE[i] = n
 }
 
@@ -16,9 +16,7 @@ for (let i = 0; i < 255; i++) {
 }
 
 function exp(k) {
-  while (k < 0) k += 255
-  while (k > 255) k -= 255
-  return EXP_TABLE[k]
+  return EXP_TABLE[k % 255]
 }
 
 function log(k) {

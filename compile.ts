@@ -4,8 +4,8 @@ import { qrcodegen } from './lib/qrcodegen'
 const { QrCode, QrSegment } = qrcodegen
 import { deflateSync } from 'fflate'
 
-await $`rm -r dist/ || true`
-await $`bunx google-closure-compiler src/*.js -O ADVANCED --js_output_file dist/bundle.js`
+await fs.rmdir('dist', { recursive: true })
+await $`bunx google-closure-compiler src/*.js -O ADVANCED --js_output_file dist/bundle.js -W QUIET`
 await $`bunx terser dist/bundle.js -o dist/bundle.js --compress`
 
 const file = await fs.readFile('dist/bundle.js')
@@ -18,6 +18,9 @@ const compressed = deflateSync(new Uint8Array(file), {
 
 console.log(`Compressed size: ${compressed.length} bytes`)
 
+// good chunk sizes: 3, 13, 23, 33, 43, 53, 63, 73, 83, 93
+// don't ask me why they follow such a regular pattern, they're just the most optimal sizes
+// if you're just barely out of room, you can try different sizes
 const bitChunkSize = 33
 const digitChunkSize = digitsToStoreBits(bitChunkSize)
 
@@ -37,8 +40,7 @@ const prefixSegment = QrSegment.makeSegments(prefix)
 const digitsSegment = QrSegment.makeNumeric(digits)
 const segments = [...prefixSegment, digitsSegment]
 
-const qr = QrCode.encodeSegments(segments, QrCode.Ecc.LOW)
-const qrBits = QrSegment.getTotalBits(segments, qr.version)
+const qrBits = QrSegment.getTotalBits(segments, 40)
 const maxBits = 23648
 console.log(
   `QR bits: ${qrBits} / ${maxBits} (${
@@ -46,8 +48,35 @@ console.log(
   }%, ${Math.floor((maxBits - qrBits) / 8)} bytes left)`
 )
 
+const qr = QrCode.encodeSegments(segments, QrCode.Ecc.LOW)
+
 // logQR(qr)
-await fs.writeFile('dist/qrqr.svg', qrSVG(qr))
+await fs.writeFile('dist/qr.svg', qrSVG(qr))
+
+await fs.rm('dist/bundle.js')
+
+/*
+<!-- start-url -->
+```
+
+```
+<!-- end-url -->
+
+put the data url in this codeblock in README.md
+*/
+
+const readmeContent = (await fs.readFile('README.md')).toString()
+const replacedReadme = readmeContent.replace(
+  /<!-- start-url -->[^]*<!-- end-url -->/,
+  `<!-- start-url -->
+\`\`\`
+${dataURL}
+\`\`\`
+<!-- end-url -->`
+)
+await fs.writeFile('README.md', replacedReadme)
+
+
 
 // functions
 
@@ -96,17 +125,19 @@ function logQR(qr: qrcodegen.QrCode) {
   }
 }
 function qrSVG(qr: qrcodegen.QrCode) {
-  const size = 10
+  const size = 1
+  const padding = size * 4
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${
-    qr.size * size
-  } ${qr.size * size}">`
+    qr.size * size + padding * 2
+  } ${qr.size * size + padding * 2}">`
+  svg += `<rect x="0" y="0" width="${qr.size * size + padding * 2}" height="${
+    qr.size * size + padding * 2
+  }" fill="#fff"/>`
   for (let y = 0; y < qr.size; y++) {
     for (let x = 0; x < qr.size; x++) {
-      svg += `<rect x="${x * size}" y="${
-        y * size
-      }" width="${size}" height="${size}" fill="${
-        qr.getModule(x, y) ? 'black' : 'white'
-      }"/>`
+      if (qr.getModule(x, y)) svg += `<rect x="${x * size + padding}" y="${
+        y * size + padding
+      }" width="${size}" height="${size}" fill="#000"/>`
     }
   }
   return svg + '</svg>'
