@@ -16,7 +16,7 @@ data:text/html,<script>d=new%20DecompressionStream('deflate-raw');w=d.writable.g
 
 Made for [Hack Club](https://hackclub.com)'s [Say Cheese](https://saycheese.hackclub.com) YSWS :D
 
-Note: If you're using an iPhone, point the camera at the QR code, click the QR icon in the bottom right, and copy the URL to your browser. Other QR scanners may need similar steps, they don't recognize `data:` URLs as URLs.
+Note: If you're using an iPhone, point the camera at the QR code, click the QR icon in the bottom right, and copy the URL to your browser. Other QR scanners may need similar steps, they don't recognize `data:` URLs as URLs. You can also copy the URL above and paste it into a new tab to try it out without needing to scan the QR code.
 
 ## How it works
 
