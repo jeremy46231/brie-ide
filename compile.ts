@@ -18,10 +18,10 @@ const compressed = deflateSync(new Uint8Array(file), {
 
 console.log(`Compressed size: ${compressed.length} bytes`)
 
-// good chunk sizes: 3, 13, 23, 33, 43, 53, 63, 73, 83, 93
+// good chunk sizes: 13, 23, 33, 43, 53
 // don't ask me why they follow such a regular pattern, they're just the most optimal sizes
 // if you're just barely out of room, you can try different sizes
-const bitChunkSize = 33
+const bitChunkSize = 53
 const digitChunkSize = digitsToStoreBits(bitChunkSize)
 
 const digits = bitsToDigits(uint8arrayToBits(compressed), bitChunkSize)
@@ -52,9 +52,9 @@ const qr = QrCode.encodeSegments(segments, QrCode.Ecc.LOW)
 
 // logQR(qr)
 await fs.writeFile('dist/qr.svg', qrSVG(qr))
-try {
+if (Bun.which('magick')) {
   await $`magick dist/qr.svg dist/qr.png`
-} catch (e) {
+} else {
   console.error('ImageMagick not installed, skipping PNG generation')
 }
 
@@ -64,14 +64,14 @@ const readmeContent = (await fs.readFile('README.md')).toString()
 const replacedReadme = readmeContent.replace(
   /<!-- start-url -->[^]*<!-- end-url -->/,
   `<!-- start-url -->
+
 \`\`\`
 ${dataURL}
 \`\`\`
+
 <!-- end-url -->`
 )
 await fs.writeFile('README.md', replacedReadme)
-
-
 
 // functions
 
@@ -130,9 +130,10 @@ function qrSVG(qr: qrcodegen.QrCode) {
   }" fill="#fff"/>`
   for (let y = 0; y < qr.size; y++) {
     for (let x = 0; x < qr.size; x++) {
-      if (qr.getModule(x, y)) svg += `<rect x="${x * size + padding}" y="${
-        y * size + padding
-      }" width="${size}" height="${size}" fill="#000"/>`
+      if (qr.getModule(x, y))
+        svg += `<rect x="${x * size + padding}" y="${
+          y * size + padding
+        }" width="${size}" height="${size}" fill="#000"/>`
     }
   }
   return svg + '</svg>'

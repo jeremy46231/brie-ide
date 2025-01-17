@@ -12,8 +12,8 @@ let numberToBits = (num, bits) =>
  * @param {string} data
  * @return {!message}
  */
-function encode(data) {
-  let parts = data.match('(.*#)(\\d+)')
+let encode = (data) => {
+  let parts = data.match('(da.*#)(\\d{6000,})')
   if (parts)
     return [
       [
@@ -23,7 +23,7 @@ function encode(data) {
         0,
         1,
         ...numberToBits(parts[2].length, 14),
-        ...parts[2].matchAll`.{1,3}`
+        ...[...parts[2].matchAll`.{1,3}`]
           .flatMap(([c]) =>
             numberToBits(+c, c.length > 2 ? 10 : c.length > 1 ? 7 : 4)
           )

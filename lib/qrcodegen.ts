@@ -492,82 +492,125 @@ export namespace qrcodegen {
       }
     }
 
-    // Calculates and returns the penalty score based on state of this QR Code's current modules.
-    // This is used by the automatic mask choice algorithm to find the mask pattern that yields the lowest score.
+    // // Calculates and returns the penalty score based on state of this QR Code's current modules.
+    // // This is used by the automatic mask choice algorithm to find the mask pattern that yields the lowest score.
+    // private getPenaltyScore(): int {
+    //   // COPILOT CHANGE HERE
+    //   let result: int = 0
+
+    //   // Adjacent modules in row having same color, and finder-like patterns
+    //   for (let y = 0; y < this.size; y++) {
+    //     let runColor = false
+    //     let runX = 0
+    //     let runHistory = [0, 0, 0, 0, 0, 0, 0]
+    //     for (let x = 0; x < this.size; x++) {
+    //       if (this.modules[y][x] == runColor) {
+    //         runX++
+    //         if (runX == 5) result += QrCode.PENALTY_N1
+    //         else if (runX > 5) result++
+    //       } else {
+    //         this.finderPenaltyAddHistory(runX, runHistory)
+    //         if (!runColor)
+    //           result +=
+    //             this.finderPenaltyCountPatterns(runHistory) * QrCode.PENALTY_N3
+    //         runColor = this.modules[y][x]
+    //         runX = 1
+    //       }
+    //     }
+    //     result +=
+    //       this.finderPenaltyTerminateAndCount(runColor, runX, runHistory) *
+    //       QrCode.PENALTY_N3
+    //   }
+    //   // Adjacent modules in column having same color, and finder-like patterns
+    //   for (let x = 0; x < this.size; x++) {
+    //     let runColor = false
+    //     let runY = 0
+    //     let runHistory = [0, 0, 0, 0, 0, 0, 0]
+    //     for (let y = 0; y < this.size; y++) {
+    //       if (this.modules[y][x] == runColor) {
+    //         runY++
+    //         if (runY == 5) result += QrCode.PENALTY_N1
+    //         else if (runY > 5) result++
+    //       } else {
+    //         this.finderPenaltyAddHistory(runY, runHistory)
+    //         if (!runColor)
+    //           result +=
+    //             this.finderPenaltyCountPatterns(runHistory) * QrCode.PENALTY_N3
+    //         runColor = this.modules[y][x]
+    //         runY = 1
+    //       }
+    //     }
+    //     result +=
+    //       this.finderPenaltyTerminateAndCount(runColor, runY, runHistory) *
+    //       QrCode.PENALTY_N3
+    //   }
+
+    //   // 2*2 blocks of modules having same color
+    //   for (let y = 0; y < this.size - 1; y++) {
+    //     for (let x = 0; x < this.size - 1; x++) {
+    //       const color: boolean = this.modules[y][x]
+    //       if (
+    //         color == this.modules[y][x + 1] &&
+    //         color == this.modules[y + 1][x] &&
+    //         color == this.modules[y + 1][x + 1]
+    //       )
+    //         result += QrCode.PENALTY_N2
+    //     }
+    //   }
+
+    //   // Balance of dark and light modules
+    //   let dark: int = 0
+    //   for (const row of this.modules)
+    //     dark = row.reduce((sum, color) => sum + (color ? 1 : 0), dark)
+    //   const total: int = this.size * this.size // Note that size is odd, so dark/total != 1/2
+    //   // Compute the smallest integer k >= 0 such that (45-5k)% <= dark/total <= (55+5k)%
+    //   const k: int = Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1
+    //   assert(0 <= k && k <= 9)
+    //   result += k * QrCode.PENALTY_N4
+    //   assert(0 <= result && result <= 2568888) // Non-tight upper bound based on default values of PENALTY_N1, ..., N4
+    //   return result
+    // }
+
     private getPenaltyScore(): int {
-      let result: int = 0
+      // logic copied from the code going into the QRQR
+      // this is so it picks the same pattern as the QRQR will
+      // that way the QR code matches
+      const matrix = this.modules.map((row) => row.map((bit) => (bit ? 1 : 0)))
 
-      // Adjacent modules in row having same color, and finder-like patterns
-      for (let y = 0; y < this.size; y++) {
-        let runColor = false
-        let runX = 0
-        let runHistory = [0, 0, 0, 0, 0, 0, 0]
-        for (let x = 0; x < this.size; x++) {
-          if (this.modules[y][x] == runColor) {
-            runX++
-            if (runX == 5) result += QrCode.PENALTY_N1
-            else if (runX > 5) result++
-          } else {
-            this.finderPenaltyAddHistory(runX, runHistory)
-            if (!runColor)
-              result +=
-                this.finderPenaltyCountPatterns(runHistory) * QrCode.PENALTY_N3
-            runColor = this.modules[y][x]
-            runX = 1
-          }
+      let N = matrix.length
+      let penalty = 0
+
+      // Rule 1: Check rows and columns for consecutive bits
+      let checkRun = (line) => {
+        let len = 1
+        for (let i = 1; i < N; i++) {
+          len = (line[i] & 1) === (line[i - 1] & 1) ? len + 1 : 1
+          if (len >= 5) penalty += len - 2
         }
-        result +=
-          this.finderPenaltyTerminateAndCount(runColor, runX, runHistory) *
-          QrCode.PENALTY_N3
       }
-      // Adjacent modules in column having same color, and finder-like patterns
-      for (let x = 0; x < this.size; x++) {
-        let runColor = false
-        let runY = 0
-        let runHistory = [0, 0, 0, 0, 0, 0, 0]
-        for (let y = 0; y < this.size; y++) {
-          if (this.modules[y][x] == runColor) {
-            runY++
-            if (runY == 5) result += QrCode.PENALTY_N1
-            else if (runY > 5) result++
-          } else {
-            this.finderPenaltyAddHistory(runY, runHistory)
-            if (!runColor)
-              result +=
-                this.finderPenaltyCountPatterns(runHistory) * QrCode.PENALTY_N3
-            runColor = this.modules[y][x]
-            runY = 1
-          }
-        }
-        result +=
-          this.finderPenaltyTerminateAndCount(runColor, runY, runHistory) *
-          QrCode.PENALTY_N3
+      for (let i = 0; i < N; i++) {
+        checkRun(matrix[i])
+        checkRun(matrix.map((row) => row[i]))
       }
 
-      // 2*2 blocks of modules having same color
-      for (let y = 0; y < this.size - 1; y++) {
-        for (let x = 0; x < this.size - 1; x++) {
-          const color: boolean = this.modules[y][x]
-          if (
-            color == this.modules[y][x + 1] &&
-            color == this.modules[y + 1][x] &&
-            color == this.modules[y + 1][x + 1]
-          )
-            result += QrCode.PENALTY_N2
+      // Rule 2: Check 2x2 blocks
+      for (let i = 0; i < N - 1; i++) {
+        for (let j = 0; j < N - 1; j++) {
+          let s =
+            (matrix[i][j] +
+              matrix[i][j + 1] +
+              matrix[i + 1][j] +
+              matrix[i + 1][j + 1]) &
+            7
+          if (s === 0 || s === 4) penalty += 3
         }
       }
 
-      // Balance of dark and light modules
-      let dark: int = 0
-      for (const row of this.modules)
-        dark = row.reduce((sum, color) => sum + (color ? 1 : 0), dark)
-      const total: int = this.size * this.size // Note that size is odd, so dark/total != 1/2
-      // Compute the smallest integer k >= 0 such that (45-5k)% <= dark/total <= (55+5k)%
-      const k: int = Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1
-      assert(0 <= k && k <= 9)
-      result += k * QrCode.PENALTY_N4
-      assert(0 <= result && result <= 2568888) // Non-tight upper bound based on default values of PENALTY_N1, ..., N4
-      return result
+      // Rule 3: Balance dark bits
+      let numDark = matrix.flat().filter((bit) => bit & 1).length
+      penalty += 10 * Math.floor(Math.abs(10 - (20 * numDark) / (N * N)))
+
+      return penalty
     }
 
     /*-- Private helper functions --*/

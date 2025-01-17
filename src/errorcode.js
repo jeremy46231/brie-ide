@@ -1,64 +1,43 @@
-// Galois Field Math
-let GF256_BASE = 285
-
 let EXP_TABLE = [1]
 
 let LOG_TABLE = []
 
 for (let i = 1; i < 256; i++) {
   let n = EXP_TABLE[i - 1] << 1
-  if (n > 255) n ^= GF256_BASE
+  if (n > 255) n ^= 285
   EXP_TABLE[i] = n
+  LOG_TABLE[n] = i
 }
 
-for (let i = 0; i < 255; i++) {
-  LOG_TABLE[EXP_TABLE[i]] = i
-}
-
-function exp(k) {
-  return EXP_TABLE[k % 255]
-}
-
-function log(k) {
-  return LOG_TABLE[k]
-}
-
-// Generator Polynomials
-let POLYNOMIALS = [[0]]
-
-function generatorPolynomial(num) {
-  if (POLYNOMIALS[num]) {
-    return POLYNOMIALS[num]
-  }
+let generatorPolynomial = (num) => {
+  if (!num) return [0]
   let prev = generatorPolynomial(num - 1)
-  let res = []
+  let res = [prev[0]]
 
-  res[0] = prev[0]
   for (let i = 1; i <= num; i++) {
-    res[i] = log(exp(prev[i]) ^ exp(prev[i - 1] + num - 1))
+    res[i] =
+      LOG_TABLE[
+        EXP_TABLE[prev[i % 255]] ^ EXP_TABLE[(prev[i - 1] + num - 1) % 255]
+      ]
   }
-  POLYNOMIALS[num] = res
   return res
 }
 
 // export functions
-function calculateEC(msg, ec_len) {
-  // `msg` could be array or buffer
-  // convert `msg` to array
-  msg = [].slice.call(msg)
-
+let calculateEC = (msg, ec_len) => {
   // Generator Polynomial
   let poly = generatorPolynomial(ec_len)
 
-  for (let i = 0; i < ec_len; i++) msg.push(0)
+  msg = msg.concat(Array(ec_len).fill(0))
+
   while (msg.length > ec_len) {
     if (!msg[0]) {
       msg.shift()
       continue
     }
-    let log_k = log(msg[0])
+    let log_k = LOG_TABLE[msg[0]]
     for (let i = 0; i <= ec_len; i++) {
-      msg[i] = msg[i] ^ exp(poly[i] + log_k)
+      msg[i] ^= EXP_TABLE[(poly[i] + log_k) % 255]
     }
     msg.shift()
   }

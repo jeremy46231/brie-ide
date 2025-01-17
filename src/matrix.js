@@ -1,11 +1,11 @@
 // Initialize matrix with zeros
-function init(version) {
+let init = (version) => {
   let N = version * 4 + 17
   return [...Array(N)].map(() => Array(N).fill(0))
 }
 
 // Put finders into matrix
-function fillFinders(matrix) {
+let fillFinders = (matrix) => {
   let N = matrix.length
   for (let i = -3; i <= 3; i++) {
     for (let j = -3; j <= 3; j++) {
@@ -30,7 +30,7 @@ function fillFinders(matrix) {
 }
 
 // Put align and timing
-function fillAlignAndTiming(matrix) {
+let fillAlignAndTiming = (matrix) => {
   let N = matrix.length
   if (N > 21) {
     let len = N - 13
@@ -62,7 +62,7 @@ function fillAlignAndTiming(matrix) {
 }
 
 // Fill reserved areas with zeroes
-function fillStub(matrix) {
+let fillStub = (matrix) => {
   let N = matrix.length
   for (let i = 0; i < 8; i++) {
     if (i != 6) {
@@ -84,9 +84,9 @@ function fillStub(matrix) {
 }
 
 // Fill reserved areas
-let fillReserved = (function () {
-  let FORMATS = Array(32)
-  let VERSIONS = Array(40)
+let fillReserved = (() => {
+  let FORMATS = []
+  let VERSIONS = []
 
   let gf15 = 0x0537
   let gf18 = 0x1f25
@@ -96,7 +96,7 @@ let fillReserved = (function () {
     let res = format << 10
     for (let i = 5; i > 0; i--) {
       if (res >>> (9 + i)) {
-        res ^= (gf15 << (i - 1))
+        res ^= gf15 << (i - 1)
       }
     }
     FORMATS[format] = (res | (format << 10)) ^ formats_mask
@@ -106,18 +106,16 @@ let fillReserved = (function () {
     let res = version << 12
     for (let i = 6; i > 0; i--) {
       if (res >>> (11 + i)) {
-        res ^= (gf18 << (i - 1))
+        res ^= gf18 << (i - 1)
       }
     }
     VERSIONS[version] = res | (version << 12)
   }
 
-  return function fillReserved(matrix, mask) {
+  return (matrix, mask) => {
     let N = matrix.length
     let format = FORMATS[(1 << 3) | mask]
-    function F(k) {
-      return (format >> k) & 1 ? 0x81 : 0x80
-    }
+    let F = (k) => ((format >> k) & 1 ? 0x81 : 0x80)
     for (let i = 0; i < 8; i++) {
       matrix[8][N - 1 - i] = F(i)
       if (i < 6) matrix[i][8] = F(i)
@@ -131,10 +129,8 @@ let fillReserved = (function () {
     matrix[8][7] = F(8)
 
     let version = VERSIONS[(N - 17) / 4]
+    let V = (k) => ((version >> k) & 1 ? 0x81 : 0x80)
     if (!version) return
-    function V(k) {
-      return (version >> k) & 1 ? 0x81 : 0x80
-    }
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 3; j++) {
         matrix[N - 11 + j][i] = matrix[i][N - 11 + j] = V(i * 3 + j)
@@ -144,19 +140,19 @@ let fillReserved = (function () {
 })()
 
 // Fill data
-let fillData = (function () {
+let fillData = (() => {
   let MASK_FUNCTIONS = [
-    (i, j) => (i + j) % 2 == 0,
-    (i, j) => i % 2 == 0,
-    (i, j) => j % 3 == 0,
-    (i, j) => (i + j) % 3 == 0,
-    (i, j) => (Math.floor(i / 2) + Math.floor(j / 3)) % 2 == 0,
-    (i, j) => ((i * j) % 2) + ((i * j) % 3) == 0,
-    (i, j) => (((i * j) % 2) + ((i * j) % 3)) % 2 == 0,
-    (i, j) => (((i * j) % 3) + ((i + j) % 2)) % 2 == 0,
+    (i, j) => (i + j) % 2,
+    (i) => i % 2,
+    (i, j) => j % 3,
+    (i, j) => (i + j) % 3,
+    (i, j) => (Math.floor(i / 2) + Math.floor(j / 3)) % 2,
+    (i, j) => ((i * j) % 2) + ((i * j) % 3),
+    (i, j) => (((i * j) % 2) + ((i * j) % 3)) % 2,
+    (i, j) => (((i * j) % 3) + ((i + j) % 2)) % 2,
   ]
 
-  return function fillData(matrix, data, mask) {
+  return (matrix, data, mask) => {
     let N = matrix.length
     let row = N - 1,
       col = N - 1,
@@ -165,36 +161,16 @@ let fillData = (function () {
     let mask_fn = MASK_FUNCTIONS[mask]
     let len = data.b[data.b.length - 1].length
 
-    for (let i = 0; i < len; i++) {
-      for (let b = 0; b < data.b.length; b++) {
-        if (data.b[b].length <= i) continue
-        put(data.b[b][i])
-      }
-    }
-
-    len = data.el
-    for (let i = 0; i < len; i++) {
-      for (let b = 0; b < data.e.length; b++) {
-        put(data.e[b][i])
-      }
-    }
-
-    if (col > -1) {
-      do {
-        matrix[row][col] = mask_fn(row, col) ? 1 : 0
-      } while (next())
-    }
-
-    function put(byte) {
+    let put = (byte) => {
       for (let mask = 0x80; mask; mask >>= 1) {
         let pixel = !!(mask & byte)
-        if (mask_fn(row, col)) pixel = !pixel
+        if (!mask_fn(row, col)) pixel = !pixel
         matrix[row][col] = pixel ? 1 : 0
         next()
       }
     }
 
-    function next() {
+    let next = () => {
       do {
         if (col % 2 ^ (col < 6)) {
           if ((dir < 0 && row == 0) || (dir > 0 && row == N - 1)) {
@@ -212,11 +188,32 @@ let fillData = (function () {
       } while (matrix[row][col] & 0xf0)
       return true
     }
+
+    for (let i = 0; i < len; i++) {
+      for (let b = 0; b < data.b.length; b++) {
+        if (data.b[b].length <= i) continue
+        put(data.b[b][i])
+      }
+    }
+
+    len = data.el
+    for (let i = 0; i < len; i++) {
+      for (let b = 0; b < data.e.length; b++) {
+        put(data.e[b][i])
+      }
+    }
+
+    if (col > -1) {
+      do {
+        matrix[row][col] = mask_fn(row, col) ? 0 : 1
+      } while (next())
+    }
   }
 })()
 
 // Calculate penalty
-function calculatePenalty(matrix) {
+let calculatePenalty = (matrix) => {
+  // COPILOT BASE OFF OF THIS
   let N = matrix.length
   let penalty = 0
 
@@ -246,7 +243,7 @@ function calculatePenalty(matrix) {
     }
   }
 
-  // Rule 4: Balance dark bits
+  // Rule 3: Balance dark bits
   let numDark = matrix.flat().filter((bit) => bit & 1).length
   penalty += 10 * Math.floor(Math.abs(10 - (20 * numDark) / (N * N)))
 
@@ -254,7 +251,7 @@ function calculatePenalty(matrix) {
 }
 
 // All-in-one function
-function getMatrix(data) {
+let getMatrix = (data) => {
   let matrix = init(data.v)
   fillFinders(matrix)
   fillAlignAndTiming(matrix)

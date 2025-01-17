@@ -1,5 +1,5 @@
 let doc = document
-doc.write`<meta name=viewport content=initial-scale=1><input style=width:100%><div style="display:grid;margin:1em;max-width:calc(100vh - 70px)">`
+doc.write`<meta name=viewport content=initial-scale=1><input style=width:100%;font-size:16><div style="display:grid;margin:1em;max-width:calc(100vh - 73px)">`
 doc.title = 'QRQR'
 
 let div = doc.querySelector`div`
